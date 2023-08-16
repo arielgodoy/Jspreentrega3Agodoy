@@ -1,58 +1,4 @@
-
-// Función para obtener el clima y mostrarlo en un div
-function obtenerClima(ciudad) {
-  const apiKey = "00fdf0fd0500cf4c87da23cdf5f521de"; // Reemplaza "TU_API_KEY" con tu clave de API de OpenWeatherMap
-  const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${ciudad}&appid=${apiKey}&units=metric`;
-  // Hacer la solicitud Fetch a la API
-  fetch(apiUrl)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Error al obtener los datos del clima");
-      }
-      return response.json();
-    })
-    .then(data => {
-      // Obtener la información relevante del clima desde el JSON data
-      const ciudad = data.name;
-      const temperatura = data.main.temp;
-      const humedad = data.main.humidity;
-      const condicionesClima = data.weather[0].description;
-
-      // Crear un objeto ClimaModel con la información
-      const climaModel = new ClimaModel(ciudad, temperatura, humedad, condicionesClima);
-
-      // Mostrar el clima en el div
-      mostrarClimaEnDiv(climaModel);
-    })
-    .catch(error => {
-      console.error("Error:", error.message);
-      mostrarErrorEnDiv();
-    });
-}
-
-// Función para mostrar el clima en un div
-function mostrarClimaEnDiv(clima) {
-  const infoClimaDiv = document.getElementById('infoClima');
-  infoClimaDiv.innerHTML = `
-    <h3>Información del Clima:</h3>
-    <p>Ciudad: ${clima.ciudad}</p>
-    <p>Temperatura: ${clima.temperatura}°C</p>
-    <p>Humedad: ${clima.humedad}%</p>
-    <p>Condiciones: ${clima.condicionesClima}</p>
-  `;
-
-
-
-  
-}
-
-// Función para mostrar un mensaje de error en el div
-function mostrarErrorEnDiv() {
-  const infoClimaDiv = document.getElementById('infoClima');
-  infoClimaDiv.innerHTML = "<p>Error al obtener los datos del clima.</p>";
-}
-
-
+//VARIABLES
 // Definir el modelo para representar la información del clima
 class ClimaModel {
   constructor(ciudad, temperatura, humedad, condicionesClima) {
@@ -84,76 +30,101 @@ let ciudad8 = new Clima("ARGENTINA", "CORDOBA", "2023-07-31", "Min 9°, Max 19°
 
 let pais = [ciudad1, ciudad2, ciudad3, ciudad4,ciudad5, ciudad6, ciudad7, ciudad8];
 
-document.addEventListener("DOMContentLoaded", function() {
-  // Obtener el elemento select del país y "llenarlo" dinámicamente con JS
-  const selectPais = document.getElementById("selectPais");
-  const selectCiudad = document.getElementById("selectCiudad");
-  const ciudadesPorPais = {};
+// Obtener la fecha actual
+const fechaActual = new Date();
+const opciones = { weekday: 'long' };
+const nombreDiaSemana = fechaActual.toLocaleDateString('es-ES', opciones);
 
-  // Llenar el select de países y crear un objeto con las ciudades por país
-  pais.forEach((ciudad) => {
-    if (!ciudadesPorPais[ciudad.pais]) {
-      ciudadesPorPais[ciudad.pais] = [];
-    }
-    ciudadesPorPais[ciudad.pais].push(ciudad.ciudad);
-  });
-
-  // Llenar el select de países
-  for (const pais in ciudadesPorPais) {
-    const option = document.createElement("option");
-    option.textContent = pais;
-    option.value = pais;
-    selectPais.appendChild(option);
-    llenarCiudades();
-  }
-
-  // Función para llenar el select de ciudades según el país seleccionado
-  function llenarCiudades() {
-    const selectedPais = selectPais.value;
-    selectCiudad.innerHTML = ""; // Limpiar opciones previas
-
-    ciudadesPorPais[selectedPais].forEach((ciudad) => {
-      const option = document.createElement("option");
-      option.textContent = ciudad;
-      option.value = ciudad;
-      selectCiudad.appendChild(option);
-    });
-    //fuerzo el mostar clima al cambiar de pais a la primea ciudad deplegada
-    buscaciudad();
-  }
-
-  // Asignar evento al cambio de selección de país
-  selectPais.addEventListener("change", llenarCiudades);
-
-  // Asignar evento al cambio de selección de ciudad
-  selectCiudad.addEventListener("change", buscaciudad);
-
-  
-
+// E V E N T O S 
   // Función del evento onclick()
-  function buscaciudad() {
-    let inputCiudad = document.getElementById("selectCiudad").value.toLowerCase();
+  function buscarCiudad() {
+    let inputCiudad = document.getElementById("inputciudad").value.toLowerCase();
     let ciudadEncontrada = pais.filter(
       (ciudad) => ciudad.ciudad.toLowerCase() === inputCiudad
     );
-
+  
     if (ciudadEncontrada.length > 0) {
-      mostrarInfoClima(ciudadEncontrada[0].ciudad);
+      const cachedData = localStorage.getItem(ciudadEncontrada[0].ciudad);
+      if (cachedData) {
+        mostrarInfoClima(JSON.parse(cachedData));
+      } else {
+        obtenerClima(ciudadEncontrada[0].ciudad);
+      }
     } else {
-      mostrarInfoClima(); // PASO CLIMA EN BLANCO PARA INFORMAR VIA HTML QUE NO HAY INFO
+      mostrarInfoClima();
     }
   }
 
-  // Sub función que muestra la información del clima asociada a la ciudad ingresada sleccionada en el select de la ciudad
-  function mostrarInfoClima(clima) {
+
+  // Función para obtener el clima y mostrarlo en un div
+function obtenerClima(ciudad) {
+  // Verificar si los datos están en el localStorage
+  const cachedData = localStorage.getItem(ciudad);  
+  if (cachedData) {
+    // Mostrar los datos almacenados en el localStorage
+    mostrarClimaEnDiv(JSON.parse(cachedData));
+  } else {
+    const apiKey = "00fdf0fd0500cf4c87da23cdf5f521de";
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${ciudad}&appid=${apiKey}&units=metric`;
+
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Error al obtener los datos del clima");
+        }
+        return response.json();
+      })
+      .then(data => {
+        const ciudad = data.name;
+        const temperatura = data.main.temp;
+        const humedad = data.main.humidity;
+        const condicionesClima = data.weather[0].description;
+        const climaModel = new ClimaModel(ciudad, temperatura, humedad, condicionesClima);
+        // Guardar los datos en el localStorage
+        localStorage.setItem(ciudad, JSON.stringify(climaModel));
+        mostrarClimaEnDiv(climaModel);
+      })
+      .catch(error => {
+        console.error("Error:", error.message);
+        mostrarErrorEnDiv();
+      });
+  }
+}
+
+
+// Función para mostrar el clima en un div
+function mostrarClimaEnDiv(clima) {
+  const infoClimaDiv = document.getElementById('infoClima');
+  infoClimaDiv.innerHTML = 
+  console.log(nombreDiaSemana);
+  
+   `<h3>Información $nombreDiaSemana del Clima:</h3>
+    <p>Ciudad: ${clima.ciudad}</p>
+    <p>Temperatura: ${clima.temperatura}°C</p>
+    <p>Humedad: ${clima.humedad}%</p>
+    <p>Condiciones: ${clima.condicionesClima}</p>`;
+
+}
+// Función para mostrar un mensaje de error en el div
+function mostrarErrorEnDiv() {
+  const infoClimaDiv = document.getElementById('infoClima');
+  infoClimaDiv.innerHTML = "<p>Error al obtener los datos del clima.</p>";
+}
     
+
+  
+
+
+  // Sub función que muestra la información del clima asociada a la ciudad ingresada sleccionada en el select de la ciudad
+  function mostrarInfoClima(clima) {    
     let infoClimaDiv = document.getElementById('infoClima');
     if (clima) {
-      infoClimaDiv.innerHTML = "<h3>Información del Clima:</h3><p>" + obtenerClima(clima); + "</p>";
+      var res = moment("01-06-2018", 'MM-DD-YYYY').locale("Es").format("dddd");
+      console.log(res);
+      infoClimaDiv.innerHTML = res + "<h3>Información del Clima:</h3><p>" + obtenerClima(clima) + "</p>";
+      
+      
     } else {
       infoClimaDiv.innerHTML = "<h3>No se encontró información para la ciudad ingresada.</h3>";
     }
-  }
-
-  
-});
+  } 
