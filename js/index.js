@@ -64,7 +64,7 @@ function obtenerClima(ciudad) {
     // Mostrar los datos almacenados en el localStorage
     mostrarClimaEnDiv(JSON.parse(cachedData));
   } else {
-    const apiKey = "00fdf0fd0500cf4c87da23cdf5f521de";
+    const apiKey = "000000000000000000000000000";
     const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${ciudad}&appid=${apiKey}&units=metric`;
 
     fetch(apiUrl)
